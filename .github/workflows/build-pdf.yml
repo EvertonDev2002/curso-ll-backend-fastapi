@@ -1,0 +1,65 @@
+name: Gerar PDFs dos slides
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "slide/md/**"
+      - "theme/**"
+      - "imgs/**"
+      - "marp-engine.cjs"
+      - "Dockerfile"
+      - "compose.yaml"
+  workflow_dispatch: {}
+
+jobs:
+  build-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Subir Kroki (self-hosted, perfil standalone)
+        run: docker compose --profile standalone up -d kroki mermaid
+
+      - name: Esperar o Kroki responder
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:8000/health > /dev/null 2>&1; then
+              echo "Kroki pronto."
+              exit 0
+            fi
+            echo "Aguardando Kroki... ($i/30)"
+            sleep 2
+          done
+          echo "Kroki não respondeu a tempo."
+          docker compose logs kroki mermaid
+          exit 1
+
+      - name: Build da imagem marp
+        run: docker compose build marp
+
+      - name: Gerar PDFs
+        run: |
+          docker compose run --rm \
+            -e KROKI_ENTRYPOINT=http://kroki:8000 \
+            marp --html --engine ./marp-engine.cjs --theme-set ./theme/minimalist.css \
+            -I slide/md/ -o slide/pdf/ --pdf --allow-local-files
+
+      - name: Publicar como artefato do workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: slides-pdf
+          path: slide/pdf/*.pdf
+          retention-days: 30
+
+      - name: Publicar/atualizar Release "latest" com os PDFs
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Slides (build automático)"
+          body: "PDFs gerados automaticamente a partir de ${{ github.sha }}."
+          files: slide/pdf/*.pdf
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

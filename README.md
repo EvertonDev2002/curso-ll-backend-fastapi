@@ -42,7 +42,7 @@ Slides disponíveis em `http://localhost:8080/slide/md/<arquivo>.md`.
 ## Gerar PDF
 
 ```bash
-docker compose run --rm marp --html --engine ./marp-engine.cjs --theme-set ./theme/minimalist.css -I slide/md/ -o slide/pdf/ --pdf --allow-local-files
+docker compose run --rm -e KROKI_ENTRYPOINT=http://kroki:8000 marp --html --engine ./marp-engine.cjs --theme-set ./theme/minimalist.css -I slide/md/ -o slide/pdf/ --pdf --allow-local-files
 ```
 
 ## Portas
