@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Subir Kroki (self-hosted, perfil standalone)
         run: docker compose --profile standalone up -d kroki mermaid
 
@@ -41,6 +41,7 @@ jobs:
 
       - name: Gerar PDFs
         run: |
+          export MARP_USER="$(id -u):$(id -g)"
           docker compose run --rm \
             -e KROKI_ENTRYPOINT=http://kroki:8000 \
             marp --html --engine ./marp-engine.cjs --theme-set ./theme/minimalist.css \
