@@ -1,0 +1,26 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "marp  --html --engine ./marp-engine.cjs --theme-set ./theme/minimalist.css --watch -I slide/md/ -o slide/html/",
+    "build": "marp --html --engine ./marp-engine.cjs --theme-set ./theme/minimalist.css -I slide/md/ -o slide/pdf/ --pdf --allow-local-files"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.1.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "@kazumatu981/markdown-it-kroki": "^1.3.6",
+    "@marp-team/marp-cli": "^4.4.0",
+    "@marp-team/marp-core": "^4.4.0"
+  }
+}

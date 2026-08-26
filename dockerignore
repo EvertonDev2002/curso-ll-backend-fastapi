@@ -1,0 +1,10 @@
+node_modules
+.pnpm-store
+
+slide/html
+slide/pdf
+
+# Controle de versão / editor
+.git
+.gitignore
+.vscode

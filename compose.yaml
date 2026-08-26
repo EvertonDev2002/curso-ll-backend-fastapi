@@ -1,0 +1,50 @@
+# compose.yaml
+#
+# Serviços:
+# - kroki / mermaid: Kroki self-hosted (resolve o erro 500 da instância
+#   pública, que é instável especificamente para diagramas Mermaid).
+# - marp: seu ambiente de slides, apontando para o Kroki local via
+#   KROKI_ENTRYPOINT.
+
+services:
+  kroki:
+    image: docker.io/yuzutech/kroki:latest
+    environment:
+      - KROKI_MERMAID_HOST=mermaid
+    ports:
+      - "8000:8000"
+    networks:
+      - slides
+
+  mermaid:
+    image: docker.io/yuzutech/kroki-mermaid:latest
+    expose:
+      - "8002"
+    networks:
+      - slides
+
+  marp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./slide:/home/marp/app/slide:Z
+      - ./imgs:/home/marp/app/imgs:Z
+      - ./theme:/home/marp/app/theme:Z
+      - ./marp-engine.cjs:/home/marp/app/marp-engine.cjs:Z
+    environment:
+      - LANG=pt_BR.UTF-8
+      - MARP_USER=${MARP_USER:-1000:1000}
+      - KROKI_ENTRYPOINT=http://localhost:8000
+    ports:
+      - "8080:8080"
+      - "37717:37717"
+    command: --debug=true --html --engine ./marp-engine.cjs --theme-set ./theme/minimalist.css --server --watch --allow-local-files .   
+    depends_on:
+      - kroki
+      - mermaid
+    networks:
+      - slides
+
+networks:
+  slides:

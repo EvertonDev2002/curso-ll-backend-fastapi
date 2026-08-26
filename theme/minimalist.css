@@ -1,0 +1,90 @@
+/* @theme minimalist */
+@import "default";
+
+/* Cores absolutas para o fundo e texto base */
+section {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+/* Remoção das cores padrão do tema base */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+strong,
+a {
+  color: #000000 !important;
+}
+
+a {
+  text-decoration: underline;
+}
+
+/* Blocos de código limpos */
+code,
+pre {
+  background-color: #eeeeee;
+  color: #000000;
+  border: 1px solid #cccccc;
+}
+
+/* MODO ESCURO (Acionado via Markdown) */
+
+section.invert {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+section.invert h1,
+section.invert h2,
+section.invert h3,
+section.invert h4,
+section.invert h5,
+section.invert h6,
+section.invert strong,
+section.invert a {
+  color: #ffffff !important;
+}
+
+section.invert code,
+section.invert pre {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border: 1px solid #333333;
+}
+
+/* Outros utilitarios */
+
+.split-layout {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+}
+
+.col-text {
+  width: 45%;
+  text-align: left;
+}
+
+.col-graph {
+  width: 100%;
+  height: 100%;
+  background-color: red;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.col-graph img,
+.col-graph .mermaid {
+  width: 100%;
+  height: auto;
+  min-height: 250px;
+  object-fit: contain;
+  margin-left: auto;
+  margin-right: 0;
+}
