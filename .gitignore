@@ -1,0 +1,26 @@
+# Dependências
+node_modules/
+.pnpm-store/
+
+slide/html/
+
+# Ambiente / segredos
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+
+*.pid
