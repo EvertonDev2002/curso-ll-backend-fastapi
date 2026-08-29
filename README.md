@@ -60,18 +60,7 @@ docker compose run --rm -e KROKI_ENTRYPOINT=http://kroki:8000 marp --html --engi
 - **kroki** / **mermaid**: Kroki self-hosted, publicado em
   `localhost:8000`. O `marp-engine.cjs` aponta pra essa URL via
   `KROKI_ENTRYPOINT`
-
-## Erros já resolvidos (se voltarem, é regressão)
-
-- `failed switching to "1000:1000"` → não colocar `USER marp` no fim do
-  Dockerfile; o entrypoint da imagem precisa iniciar como root.
-- `Not found processable Markdown file(s)` → `command:` do compose
-  precisa ser só os *flags* do marp (sem `pnpm run dev`) — o entrypoint
-  já invoca o binário direto.
-- `Cannot find module '@marp-team/marp-core'` → precisa estar declarado
-  como devDependency no `package.json` (não é só transitiva do
-  `marp-cli`).
-- `error 500` do Kroki / mermaid não renderiza → instância pública
-  (`kroki.io`) é instável; por isso o self-hosted.
-- Imagens não carregam em modo `--server` → servir a raiz do projeto
-  (`.`) com `--allow-local-files`, não só `slide/md/`.
+  
+ ## Documentações Auxiliares
+- [Marp](https://marpit.marp.app)
+- [Kroki](https://kroki.io/#support)

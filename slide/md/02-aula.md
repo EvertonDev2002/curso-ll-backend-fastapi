@@ -606,7 +606,7 @@ erDiagram
 
 ```
 
-myanimelist
+mushi_bingo
 ├── app
 │   ├── main.py
 │   ├── models
