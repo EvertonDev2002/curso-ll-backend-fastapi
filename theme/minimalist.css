@@ -3,8 +3,8 @@
 
 /* Cores absolutas para o fundo e texto base */
 section {
-  background-color: #ffffff;
-  color: #000000;
+	background-color: #ffffff;
+	color: #000000;
 }
 
 /* Remoção das cores padrão do tema base */
@@ -16,26 +16,26 @@ h5,
 h6,
 strong,
 a {
-  color: #000000 !important;
+	color: #000000 !important;
 }
 
 a {
-  text-decoration: underline;
+	text-decoration: underline;
 }
 
 /* Blocos de código limpos */
 code,
 pre {
-  background-color: #eeeeee;
-  color: #000000;
-  border: 1px solid #cccccc;
+	background-color: #eeeeee;
+	color: #000000;
+	border: 1px solid #cccccc;
 }
 
 /* MODO ESCURO (Acionado via Markdown) */
 
 section.invert {
-  background-color: #000000;
-  color: #ffffff;
+	background-color: #000000;
+	color: #ffffff;
 }
 
 section.invert h1,
@@ -46,44 +46,120 @@ section.invert h5,
 section.invert h6,
 section.invert strong,
 section.invert a {
-  color: #ffffff !important;
+	color: #ffffff !important;
 }
 
 section.invert code,
 section.invert pre {
-  background-color: #1a1a1a;
-  color: #ffffff;
-  border: 1px solid #333333;
+	background-color: #1a1a1a;
+	color: #ffffff;
+	border: 1px solid #333333;
 }
 
 /* Outros utilitarios */
 
-.split-layout {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  align-items: center;
+.kroki-diagram {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
-.col-text {
-  width: 45%;
-  text-align: left;
+.kroki-diagram img {
+	width: auto;
+	height: auto;
+	object-fit: contain;
 }
 
-.col-graph {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* -----------------------------------------------------------------
+   Caso 1: diagrama sozinho — ocupa o slide inteiro
+   ----------------------------------------------------------------- */
+section:not(.split):not(.split_invert):has(> .kroki-diagram) > .kroki-diagram {
+	height: 100%;
 }
 
-.col-graph img,
-.col-graph .mermaid {
-  width: 100%;
-  height: auto;
-  min-height: 250px;
-  object-fit: contain;
-  margin-left: auto;
-  margin-right: 0;
+section:not(.split):not(.split_invert):has(> .kroki-diagram) img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+/* -----------------------------------------------------------------
+   Caso 2: split com UM diagrama — texto à esquerda, diagrama à direita
+   ----------------------------------------------------------------- */
+section.split {
+	position: relative;
+	padding-right: 50%;
+}
+
+section.split > .kroki-diagram {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: 48%;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+section.split > .kroki-diagram img {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+}
+
+/* -----------------------------------------------------------------
+   Caso 3: split_invert — diagrama à esquerda, texto à direita
+   ----------------------------------------------------------------- */
+section.split_invert {
+	position: relative;
+	padding-left: 50%;
+}
+
+section.split_invert > .kroki-diagram {
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	width: 48%;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+section.split_invert > .kroki-diagram img {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+}
+
+/* -----------------------------------------------------------------
+   Caso 4: split com DOIS diagramas — lado a lado, sem texto
+   ----------------------------------------------------------------- */
+section.split:has(> .kroki-diagram ~ .kroki-diagram) {
+	display: flex;
+	flex-direction: row; /* <- o que estava faltando */
+	align-items: center;
+	justify-content: center;
+	gap: 2rem;
+	padding-right: 0;
+}
+
+section.split:has(> .kroki-diagram ~ .kroki-diagram) > .kroki-diagram {
+	position: static;
+	top: auto;
+	right: auto;
+	bottom: auto;
+	width: auto;
+	flex: 1 1 0;
+	height: 80%;
+	min-width: 0;
+}
+
+section.split:has(> .kroki-diagram ~ .kroki-diagram) > .kroki-diagram img {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
 }
