@@ -16,12 +16,12 @@ theme: minimalist
 
 # Aula Anterior
 
-- Revisão de Banco de Dados (modelagem, normalização, SQL básico)
+- Revisão de Banco de Dados
 - Boas práticas de nomenclatura de banco de dados
 - Apresentação do projeto: diagrama ER, regras de negócio e endpoints sugeridos
 - Estrutura de pastas do projeto
 
-<!-- imagem de destaque desta aula: ../../imgs/03-aula/<sua-imagem>.png -->
+![bg right 80%](../../imgs/03-aula/grimmer.jpg)
 
 ---
 
@@ -31,57 +31,139 @@ theme: minimalist
 - **SQLAlchemy:** o ORM que vamos utilizar no projeto
 - **Alembic:** ferramenta de migrations, integrada ao SQLAlchemy
 
-Hoje vamos sair da teoria e conectar o projeto a um banco de dados de verdade.
-
 ---
 
-## Configurando o SQLAlchemy
+## Enum
 
-Criamos o `engine` (conexão com o banco) e a `Session` (unidade de trabalho para consultas e alterações).
+Enum (abreviação de enumeration, ou "enumeração") é um tipo de dado que representa um conjunto fixo e finito de valores constantes e nomeados.
 
-```python
-# app/database.py
+```Python
+# app/enums/anime_status.py
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from enum import Enum as PyEnum
 
-DATABASE_URL = "sqlite:///./database.db"
 
-engine = create_engine(DATABASE_URL)
-Session = sessionmaker(bind=engine)
-
-Base = declarative_base()
+class AnimeStatus(str, PyEnum):
+    PLANEJO_ASSISTIR = 'planejo assistir'
+    ASSISTINDO = 'assistindo'
+    ASSISTIDO = 'assistido'
+    PARADO = 'parado'
 ```
 
 ---
 
-### Criando os Models: Autor e Estudio
+## Schemas
+
+Um schema Pydantic é uma classe que descreve a forma dos dados que entram e saem da sua `API`. É a camada de contrato entre o mundo externo (`JSON` do cliente) e o mundo interno (objetos `ORM` do `SQLAlchemy`).
+
+- Schema Pydantic = validação + serialização + documentação automática
+
+Quando instalamos o `FastAPI` com [standard], todos os pacotes complementares foram instalados juntos, o `pydantic-*` é um deles.
+
+- Certifique que possui instalado com `uv pip list`
+
+---
+
+### Criando Schema: Anime Base
+
+```Python
+# app/schema/anime.py
+
+from pydantic import BaseModel, Field, model_validator
+from typing import Optional, Self
+from app.enums.anime_status import AnimeStatus
+
+
+class AnimeBase(BaseModel):
+    name: str = Field(..., max_length=150)
+    episodes: int = Field(default=0, ge=0)
+    episodes_watched: int = Field(default=0, ge=0)
+    score: Optional[float] = Field(default=None, ge=0, le=10)
+    status: AnimeStatus = AnimeStatus.PLANEJO_ASSISTIR
+    cover: Optional[str] = None
+    author_id: Optional[int] = None
+    studio_id: Optional[int] = None
+
+    @model_validator(mode='after')
+    def validar_watched(self) -> Self:
+        if self.episodes_watched > self.episodes:
+            raise ValueError('episodes_watched não pode ser maior que episodes')
+        if self.status == AnimeStatus.PLANEJO_ASSISTIR and self.score is not None:
+            raise ValueError('score deve ser nulo quando o status for planejo assistir')
+        return self
+```
+
+- `ge`: O valor deve ser maior ou igual a esse número
+- `le`: O valor deve ser menor ou igual a esse número
+
+---
+
+### Criando Schema: Anime Public
 
 ```python
-# app/models/anime.py
-
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
+from datetime import datetime
+from pydantic import ConfigDict
 
 
-class Autor(Base):
-    __tablename__ = "autor"
+class AnimePublic(AnimeBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    nome: Mapped[str] = mapped_column(String(100), unique=True)
+    model_config = ConfigDict(from_attributes=True)
+```
 
-    animes: Mapped[list["Anime"]] = relationship(back_populates="autor")
+---
+
+### Criando Schema: Anime List
+
+```Python
+class AnimeList(BaseModel):
+    animes: list[AnimePublic]
+```
+
+---
+
+### Criando Schema: Anime Schema
+
+```Python
+class AnimeCreate(AnimeBase):
+    pass
+```
+
+---
+
+## Configurando ambiente do banco de dados
+
+A classe `Settings` fica responsavel por carregar as configurações do arquivo `.env`.
+
+```python
+# app/settings.py
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Estudio(Base):
-    __tablename__ = "estudio"
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file='.env', env_file_encoding='utf-8'
+    )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    nome: Mapped[str] = mapped_column(String(100), unique=True)
+    DATABASE_URL: str = Field(init=False)
+```
 
-    animes: Mapped[list["Anime"]] = relationship(back_populates="estudio")
+Em `.env` adicione `DATABASE_URL="sqlite:///database.db"`
+
+---
+
+### Criando Model: base
+
+```python
+# app/models/base.py
+
+from sqlalchemy.orm import registry
+
+table_registry = registry()
 ```
 
 ---
@@ -89,54 +171,101 @@ class Estudio(Base):
 ### Criando o Model: Anime
 
 ```python
-# app/models/anime.py (continuação)
+# app/models/anime.py
+
+from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import ForeignKey, String, func
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_as_dataclass,
+    mapped_column,
+    relationship,
+)
+
+from app.enums.anime_status import AnimeStatus
+from app.models.base import table_registry
+
+if TYPE_CHECKING:
+    from .author import Author
+    from .studio import Studio
 
 
-class Anime(Base):
-    __tablename__ = "anime"
+@mapped_as_dataclass(registry=table_registry)
+class Anime:
+    __tablename__ = 'anime'
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    nome: Mapped[str] = mapped_column(String(150))
-    episodios: Mapped[int]
-    nota: Mapped[float | None]
-    status: Mapped[str]
-    capa: Mapped[str | None]
-    criado_em: Mapped[datetime] = mapped_column(default=datetime.now)
-    atualizado_em: Mapped[datetime] = mapped_column(
-        default=datetime.now, onupdate=datetime.now
+    id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    name: Mapped[str] = mapped_column(String(150))
+    episodes: Mapped[int] = mapped_column(default=0)
+    episodes_watched: Mapped[int] = mapped_column(default=0)
+    score: Mapped[float | None] = mapped_column(default=None)
+    status: Mapped[AnimeStatus] = mapped_column(
+        SQLEnum(AnimeStatus, native_enum=False, name='anime_status'),
+        default=AnimeStatus.PLANEJO_ASSISTIR,
     )
 
-    autor_id: Mapped[int | None] = mapped_column(ForeignKey("autor.id"))
-    estudio_id: Mapped[int | None] = mapped_column(ForeignKey("estudio.id"))
+    cover: Mapped[str | None] = mapped_column(default=None)
 
-    autor: Mapped[Autor | None] = relationship(back_populates="animes")
-    estudio: Mapped[Estudio | None] = relationship(back_populates="animes")
+    author_id: Mapped[int | None] = mapped_column(
+        ForeignKey('author.id'), default=None, nullable=True
+    )
+    studio_id: Mapped[int | None] = mapped_column(
+        ForeignKey('studio.id'), default=None, nullable=True
+    )
+    author: Mapped[Author | None] = relationship(
+        back_populates='animes', default=None
+    )
+    studio: Mapped[Studio | None] = relationship(
+        back_populates='animes', default=None
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now(), init=False,
+    )
+```
+
+---
+
+### Tornando Models em um pacote
+
+O `__init__.py` é um arquivo especial que marca um diretório como um pacote Python. Sem ele (na forma tradicional), o Python não reconhece a pasta como um pacote importável.
+
+```python
+# app/models/__init__.py
+
+from app.models.anime import Anime
+from app.models.base import table_registry
+
 ```
 
 ---
 
 ## Alembic: Configuração Inicial
 
-```bash
-uv add alembic
-
-uv run alembic init migrations
-```
-
 Em `migrations/env.py`, aponte o `target_metadata` para os models do projeto:
 
 ```python
-from app.database import Base
-from app.models.anime import Autor, Estudio, Anime  # noqa
+# migrations/env.py
 
-target_metadata = Base.metadata
+from app.models import table_registry
+from app.settings import Settings
+
+config = context.config
+config.set_main_option('sqlalchemy.url', Settings().DATABASE_URL)
+
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+target_metadata = table_registry.metadata
 ```
-
-**Dica:** Ajuste também `sqlalchemy.url` em `alembic.ini` para `sqlite:///./database.db`
 
 ---
 
@@ -145,7 +274,7 @@ target_metadata = Base.metadata
 ```bash
 # Gera o script de migration comparando os models com o banco
 
-uv run alembic revision --autogenerate -m "cria tabelas autor, estudio e anime"
+uv run alembic revision --autogenerate -m "cria tabela anime"
 ```
 
 ```bash
@@ -158,35 +287,27 @@ uv run alembic upgrade head
 
 ---
 
-## Organizando rotas com APIRouter
+## Configurando o SQLAlchemy
 
-Até agora todos os endpoints viviam em `main.py`. O `APIRouter` permite dividir as rotas por recurso.
+Criamos o `engine` (conexão com o banco) e a `Session` (unidade de trabalho para consultas e alterações).
 
 ```python
-# app/routers/animes.py
+# app/database.py
 
-from fastapi import APIRouter
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-router = APIRouter(prefix="/animes", tags=["animes"])
+from app.settings import Settings
+
+engine = create_engine(Settings().DATABASE_URL)
+
+
+Session = sessionmaker(bind=engine, autoflush=False)
 ```
 
 ---
 
-```python
-# app/main.py
-
-from fastapi import FastAPI
-
-from app.routers import animes
-
-app = FastAPI()
-
-app.include_router(animes.router)
-```
-
----
-
-### Persistindo os dados no banco
+### Persistindo os dados no banco (POST)
 
 O `database = []` sai de cena, agora os endpoints usam a `Session` do SQLAlchemy.
 
@@ -194,7 +315,7 @@ O `database = []` sai de cena, agora os endpoints usam a `Session` do SQLAlchemy
 # app/routers/animes.py
 
 @router.post("/", status_code=HTTPStatus.CREATED, response_model=AnimePublic)
-def create_anime(anime: AnimeSchema):
+def create_anime(anime: AnimeCreate):
     with Session() as session:
         db_anime = Anime(**anime.model_dump())
         session.add(db_anime)
@@ -208,20 +329,18 @@ def create_anime(anime: AnimeSchema):
 
 ---
 
-### Persistindo os dados no banco (GET)
+### Consultando o banco de dados por `id` (GET)
 
 ```python
-# app/routers/animes.py
-
-from app.schema.anime import AnimeList
-
-
-@router.get("/", response_model=AnimeList)
-def read_animes():
+@router.get('/{anime_id}', response_model=AnimePublic)
+def read_anime(anime_id: int):
     with Session() as session:
-        animes = session.query(Anime).all()
-
-        return {"animes": animes}
+        anime = session.get(Anime, anime_id)
+        if anime is None:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND, detail='Anime não encontrado'
+            )
+        return anime
 ```
 
 ---
@@ -230,7 +349,7 @@ def read_animes():
 
 **Atividade**
 
-- Siga o mesmo padrão de `/animes` para implementar `/autores` e `/estudios`
+- Siga o mesmo padrão de `/animes` para implementar `/authors` e `/studios`
 - Teste os endpoints pelo Swagger (`/docs`) e confira se os dados estão sendo salvos no `database.db`
 - Fique livre para criar filtros ou endpoints extras que fizerem sentido para o seu projeto
 
@@ -241,6 +360,7 @@ def read_animes():
 - Injeção de Dependência (`Depends`)
 - `RedirectResponse`
 - Middleware
+- Router
 - Tratamento de exceções mais robusto
 
 ---
@@ -250,8 +370,13 @@ def read_animes():
 - [SQLAlchemy — ORM Quick Start](https://docs.sqlalchemy.org/en/20/orm/quickstart.html)
 - [SQLAlchemy — Declarative Mapping](https://docs.sqlalchemy.org/en/20/orm/declarative_mapping.html)
 - [Alembic](https://alembic.sqlalchemy.org/en/latest/)
-- [FastAPI — Bigger Applications (APIRouter)](https://fastapi.tiangolo.com/tutorial/bigger-applications/)
-- [FastAPI do Zero](https://fastapidozero.dunossauro.com/4.0)
+- [Pydantic — Validators ](https://pydantic.dev/docs/validation/dev/concepts/validators/)
+- [Pydantic — Constrainst (Restrições)](https://pydantic.dev/docs/validation/latest/api/pydantic/standard_library_types/#constraints-2)
+- [Pydantic — Fields](https://pydantic.dev/docs/validation/latest/api/pydantic/fields/)
+- [Query Parameters and String Validations](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/?h=Query)
+- [Python - typing](https://docs.python.org/pt-br/3.14/library/typing.html)
+- [Python - dataclasses](https://docs.python.org/pt-br/3.14/library/dataclasses.html)
+- [Curso de Type Hints](https://www.youtube.com/playlist?list=PLbIBj8vQhvm04EuddtleOAoEmfU9vwQlN)
 
 ---
 
