@@ -126,46 +126,8 @@ Objetivo: Criar uma versão simplificada do MyAnimeList, permitindo cadastrar an
 
 ---
 
-```mermaid
-%%{
-  init: {
-    "theme": "base",
-    "themeVariables": {
-      "primaryColor": "#FFFFFF",
-      "primaryBorderColor": "#000000",
-      "primaryTextColor": "#000000",
-      "lineColor": "#000000",
-      "background": "#FFFFFF"
-    }
-  }
-}%%
+![bg contain](../../imgs/02-aula/diagram.png)
 
-erDiagram
-    AUTHOR {
-        int id PK
-        string name
-    }
-    STUDIO {
-        int id PK
-        string name
-    }
-    ANIME {
-        int id PK
-        string name
-        int episodes
-        int episodes_watched
-        float score
-        string status
-        string cover
-        int author_id FK
-        int studio_id FK
-        timestamp created_at
-        timestamp updated_at
-    }
-    AUTHOR ||--o{ ANIME : "writes"
-    STUDIO ||--o{ ANIME : "produces"
-
-```
 
 ---
 
