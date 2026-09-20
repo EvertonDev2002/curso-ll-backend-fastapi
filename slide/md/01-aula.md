@@ -131,7 +131,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 Para criar um projeto, utilize `uv init projeto --bare`
 
-```
+```bash
 # Uma estrutura mínima como essa será criada
 
 projeto
@@ -148,7 +148,7 @@ O [FastAPI](https://fastapi.tiangolo.com/) é um framework web moderno, de alta 
 
 **Para instalar**
 
-```
+```bash
 # No linux e Windows
 uv add "fastapi[standard]"
 ```
@@ -156,6 +156,7 @@ uv add "fastapi[standard]"
 **Dica:** Verifique se está dentro da pasta (raiz) do projeto antes de instalar.
 
 ---
+
 Configurar ponto de entrada (`entrypoint`) em `pyproject.toml`
 
 ```toml
@@ -163,6 +164,55 @@ Configurar ponto de entrada (`entrypoint`) em `pyproject.toml`
 entrypoint = "main:app"
 ```
 ___
+
+Configurando `ruff` e `poe` para `lint` e `format`
+
+```bash
+uv add --dev ruff poe
+```
+
+```python
+# pyproject.toml
+
+[tool.ruff]
+line-length = 79
+extend-exclude =["migrations"]
+
+[tool.ruff.lint]
+preview = true
+select = ["I", "F", "E", "W", "PL", "PT", "N", "C4", "ICN", "RUF", "SIM"]
+
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+```
+
+---
+
+```python
+# pyproject.toml
+
+[tool.poe.tasks]
+
+lint = { cmd = "ruff check" }
+fmt.sequence = [
+    { cmd = "ruff check --fix" },
+    { cmd = "ruff format" },
+]
+start = "fastapi dev"
+```
+
+Para utilizar use
+```bash
+# Para lint
+uv run poe lint
+# Para formatar
+uv run poe fmt 
+# Para iniciar o FastAPI
+uv run poe start 
+```
+
+---
 
 Vamos testar a instalação do FastAPI criando nosso primeiro endpoint (ou rota).
 
@@ -268,6 +318,8 @@ Serve para receber dados. Por exemplo, inserir um novo usuário no DB.
 
 ```python
 from schema import UserDB, UserPublic, UserSchema
+
+database = []
 
 @app.post("/users/", status_code=HTTPStatus.CREATED, response_model=UserPublic)
 def create_user(user: UserSchema):
