@@ -122,8 +122,6 @@ class AnimeList(BaseModel):
     animes: list[AnimePublic]
 ```
 
----
-
 ### Criando Schema: Anime Schema
 
 ```Python
