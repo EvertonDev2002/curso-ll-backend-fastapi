@@ -25,7 +25,7 @@ theme: minimalist
 - Ambiente de Desenvolver
 - CRUD
 
-![bg right 99%](../../imgs/02-aula/anya-forger-pmanga.png)
+![bg right 99%](../../imgs/02-aula/naruto.png)
 
 ---
 
@@ -46,7 +46,7 @@ theme: minimalist
 
 ## Banco de Dados (Revisão) - SGBD
 
-É um conjunto organizado de dados relacionados, armazenado e gerenciado de forma que permita inserção, consulta, atualização e remoção eficientes.
+É um conjunto organizado de dados relacionados, armazenado e gerenciado de forma que permita inserção, consulta, atualização e remoção.
 
 **Modelagem de Dados:**
 
@@ -59,370 +59,6 @@ theme: minimalist
 - 1FN
 - 2FN
 - 3FN
-
----
-
-### Modelagem de Dados
-
-#### Conceitual
-
-Representação de alto nível dos dados e suas relações, independente de tecnologia.
-
-- Objetivo: capturar entidades, atributos e relacionamentos entendidos pelos stakeholders.
-- Independente do SGBD.
-
-```text
-    cliente:
-    pedido
-
-    pedido:
-    produto
-
-```
-
----
-
-<div class="split-layout">
-<div class="col-text">
-
-#### Lógico
-
-Mapeamento do modelo conceitual para estruturas lógicas (tabelas, colunas, chaves).
-
-- Objetivo: definir chaves primárias/estrangeiras, cardinalidades e tipos de dados abstratos.
-- Independente do SGBD.
-
-</div>
-<div class="col-graph">
-
-```mermaid
-
-%%{
-  init: {
-    "theme": "base",
-    "themeVariables": {
-      "primaryColor": "#FFFFFF",
-      "primaryBorderColor": "#000000",
-      "primaryTextColor": "#000000",
-      "lineColor": "#000000",
-      "background": "#FFFFFF"
-    }
-  }
-}%%
-
-erDiagram
-    CLIENTE {
-        Integer id PK
-        String nome
-        String email
-    }
-    PEDIDO {
-        Integer id PK
-        Date data_criacao
-        Integer cliente_id FK
-    }
-    CLIENTE ||--o{ PEDIDO : "possui"
-```
-
-</div>
-</div>
-
----
-
-<div class="split-layout">
-<div class="col-text">
-
-#### Físico
-
-Implementação concreta no SGBD escolhido, com decisões de armazenamento, índices e tipos concretos.
-
-- Objetivo: otimizar desempenho, armazenamento e integridade no ambiente de produção
-- Dependente do SGBD.
-
-</div>
-<div class="col-graph">
-
-```mermaid
-
-%%{
-  init: {
-    "theme": "base",
-    "themeVariables": {
-      "primaryColor": "#FFFFFF",
-      "primaryBorderColor": "#000000",
-      "primaryTextColor": "#000000",
-      "lineColor": "#000000",
-      "background": "#FFFFFF"
-    }
-  }
-}%%
-
-erDiagram
-    tb_cliente {
-        int id PK "AUTO_INCREMENT"
-        varchar(100) nome "NOT NULL"
-        varchar(255) email "UNIQUE"
-    }
-    tb_pedido {
-        bigint id PK
-        timestamp data_criacao "DEFAULT NOW()"
-        int cliente_id FK "INDEX"
-    }
-    tb_cliente ||--o{ tb_pedido : "FK_cliente_pedido"
-```
-
-</div>
-</div>
-
----
-
-### Normalização
-
-#### Primeira Forma Normal (1FN)
-
-Cada campo deve conter valores atômicos; eliminar grupos repetitivos/colunas multivaloradas.
-
-- Objetivo: facilita consultas e evita redundância de dados dentro de uma tupla.
-
----
-
-<div class="split-layout">
-<div class="col-graph">
-
-```mermaid
-
----
-title: Não normalizado
----
-
-%%{
-  init: {
-    "theme": "base",
-    "themeVariables": {
-      "primaryColor": "#FFFFFF",
-      "primaryBorderColor": "#000000",
-      "primaryTextColor": "#000000",
-      "lineColor": "#000000",
-      "background": "#FFFFFF"
-    }
-  }
-}%%
-
-erDiagram
-    CLIENTE {
-      int id PK
-      string nome
-      string telefones  "campo com múltiplos números"
-    }
-```
-
-</div>
-
-<div class="col-graph">
-
-```mermaid
-
----
-title: Normalizado
----
-
-%%{
-  init: {
-    "theme": "base",
-    "themeVariables": {
-      "primaryColor": "#FFFFFF",
-      "primaryBorderColor": "#000000",
-      "primaryTextColor": "#000000",
-      "lineColor": "#000000",
-      "background": "#FFFFFF"
-    }
-  }
-}%%
-
-erDiagram
-    %% Resolvendo o problema do campo multivalorado
-    CLIENTE {
-        int id PK
-        string nome
-    }
-    CLIENTE_TELEFONE {
-        int id PK
-        int cliente_id FK
-        string numero
-    }
-    CLIENTE ||--o{ CLIENTE_TELEFONE : "possui telefones"
-
-```
-
-</div>
-</div>
-
----
-
-<div class="split-layout">
-<div class="col-text">
-
-#### Segunda Forma Normal (2FN)
-
-Estar em 1FN e todos os atributos não-chave dependerem funcionalmente da chave primária inteira (eliminar dependências parciais).
-
-- Objetivo: evitar duplicação quando a chave primária é composta.
-
-</div>
-<div class="col-graph">
-
-```mermaid
-
-%%{
-  init: {
-    "theme": "base",
-    "themeVariables": {
-      "primaryColor": "#FFFFFF",
-      "primaryBorderColor": "#000000",
-      "primaryTextColor": "#000000",
-      "lineColor": "#000000",
-      "background": "#FFFFFF"
-    }
-  }
-}%%
-
-erDiagram
-    %% Separando atributos que dependiam apenas de uma parte da chave composta
-    PEDIDO {
-        int id PK
-        date data
-    }
-    PRODUTO {
-        int id PK
-        string descricao_produto
-    }
-    ITEM_PEDIDO {
-        int pedido_id PK, FK
-        int produto_id PK, FK
-        int quantidade
-    }
-    PEDIDO ||--o{ ITEM_PEDIDO : "contem"
-    PRODUTO ||--o{ ITEM_PEDIDO : "esta em"
-```
-
-</div>
-</div>
-
----
-
-<div class="split-layout">
-<div class="col-text">
-
-#### Terceira Forma Normal (3FN)
-
-Estar em 2FN e nenhum atributo não-chave depender de outro atributo não-chave (eliminar dependências transitivas).
-
-- Objetivo: reduzir anomalias de atualização e mantém integridade sem redundância desnecessária.
-
-</div>
-<div class="col-graph">
-
-```mermaid
-
-%%{
-  init: {
-    "theme": "base",
-    "themeVariables": {
-      "primaryColor": "#FFFFFF",
-      "primaryBorderColor": "#000000",
-      "primaryTextColor": "#000000",
-      "lineColor": "#000000",
-      "background": "#FFFFFF"
-    }
-  }
-}%%
-
-erDiagram
-    %% Removendo informações de departamento que estavam na tabela de funcionário
-    DEPARTAMENTO {
-        int id PK
-        string nome_departamento
-    }
-    FUNCIONARIO {
-        int id PK
-        string nome
-        int departamento_id FK
-    }
-    DEPARTAMENTO ||--o{ FUNCIONARIO : "aloca"
-```
-
-</div>
-</div>
-
----
-
-### Comandos básicos de SQL
-
-- criar
-
-```sql
-
-CREATE TABLE clientes (
-    id SERIAL PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(255) UNIQUE
-);
-
-```
-
----
-
-### Comandos básicos de SQL
-
-- listar
-
-```sql
-
-SELECT id, nome, email
-FROM clientes
-WHERE nome = 'João Silva';
-
-```
-
----
-
-### Comandos básicos de SQL
-
-- delatar
-
-```sql
-
-DELETE FROM clientes
-WHERE id = 1;
-
-```
-
----
-
-### Comandos básicos de SQL
-
-- inserir
-
-```sql
-
-INSERT INTO clientes (nome, email)
-VALUES ('João Silva', 'joao@email.com');
-
-```
-
----
-
-### Comandos básicos de SQL
-
-- atualizar
-
-```sql
-
-UPDATE clientes
-SET email = 'novoemail@email.com'
-WHERE id = 1;
-
-```
 
 ---
 
@@ -474,7 +110,7 @@ WHERE id = 1;
 
 Objetivo: Criar uma versão simplificada do MyAnimeList, permitindo cadastrar animes e acompanhar o status de cada um (assistindo, parado, assistido, planejo assistir).
 
-![bg right 70%](../../imgs/02-aula/Ikoku_Nikki_manga.jpg)
+![bg right 70%](../../imgs/02-aula/ginko.jpg)
 
 ---
 
@@ -490,10 +126,7 @@ Objetivo: Criar uma versão simplificada do MyAnimeList, permitindo cadastrar an
 
 ---
 
-<div class="col-graph">
-
 ```mermaid
-
 %%{
   init: {
     "theme": "base",
@@ -508,32 +141,31 @@ Objetivo: Criar uma versão simplificada do MyAnimeList, permitindo cadastrar an
 }%%
 
 erDiagram
-    AUTOR {
+    AUTHOR {
         int id PK
-        string nome
+        string name
     }
-    ESTUDIO {
+    STUDIO {
         int id PK
-        string nome
+        string name
     }
     ANIME {
         int id PK
-        string nome
-        int episodios
-        float nota
+        string name
+        int episodes
+        int episodes_watched
+        float score
         string status
-        string capa
-        int autor_id FK
-        int estudio_id FK
-        timestamp criado_em
-        timestamp atualizado_em
+        string cover
+        int author_id FK
+        int studio_id FK
+        timestamp created_at
+        timestamp updated_at
     }
-    AUTOR ||--o{ ANIME : "escreve"
-    ESTUDIO ||--o{ ANIME : "produz"
+    AUTHOR ||--o{ ANIME : "writes"
+    STUDIO ||--o{ ANIME : "produces"
+
 ```
-
-</div>
-
 
 ---
 
@@ -541,8 +173,9 @@ erDiagram
 
 **Fluxo de progresso:**
 
-- `planejo_assistir` -> `assistindo` -> `assistido`
+- `planejo assistir` -> `assistindo` -> `assistido`
   - _Regra:_ Um anime só pode ser marcado como `assistido` depois de já ter passado por `assistindo`.
+  - _Regra:_ Só é possível marcar como `assistido` quando `episodes_watched` for igual a `episodes`.
 
 **Fluxo de pausa:**
 
@@ -555,50 +188,56 @@ erDiagram
 
 - A nota é opcional e vai de `0` a `10` (aceita casas decimais, ex: `8.5`).
 - Só faz sentido atribuir nota quando o status for `assistindo` ou `assistido`.
-  - _Regra:_ Se o status for `planejo_assistir`, a nota deve ser nula.
+  - _Regra:_ Se o status for `planejo assistir`, a nota deve ser nula.
 
 ---
 
 ### Regras de negócio: Cadastro
 
-- O campo `nome` do anime é obrigatório.
-- `autor_id` e `estudio_id` são opcionais (nem todo anime tem essa informação cadastrada), mas quando informados devem referenciar um registro existente em `autor`/`estudio`.
-- O campo `nome` em `autor` e `estudio` deve ser único, evitando cadastros duplicados do mesmo autor ou estúdio.
-- O campo `episodios` representa o total de episódios da obra (não o progresso assistido).
-- `criado_em` é preenchido automaticamente na criação do registro (`DEFAULT NOW()`).
-- `atualizado_em` é atualizado automaticamente a cada modificação do registro.
-- O campo `capa` é opcional e armazena apenas o **caminho/URL da imagem** salva no servidor — o arquivo em si não fica dentro do banco de dados.
-  - _Nota:_ o recebimento do arquivo de imagem via `UploadFile` será visto em uma aula futura; por enquanto, `capa` é só mais uma coluna `string` na tabela.
+- O campo `name` do anime é obrigatório.
+- `author_id` e `studio_id` são opcionais (nem todo anime tem essa informação cadastrada), mas quando informados devem referenciar um registro existente em `author`/`studio`.
+- O campo `name` em `author` e `studio` deve ser único, evitando cadastros duplicados do mesmo autor ou estúdio.
+- O campo `episodes` representa o total de episódios da obra (não o progresso assistido).
+
+---
+
+### Regras de negócio: Cadastro
+
+- O campo `episodes_watched` representa quantos episódios o usuário já assistiu, começa em `0` na criação do anime.
+  - _Regra:_ `episodes_watched` nunca pode ser maior que `episodes`.
+  - _Regra:_ só faz sentido incrementar `episodes_watched` quando o status for `assistindo`.
+- `created_at` é preenchido automaticamente na criação do registro.
+- `updated_at` é atualizado automaticamente a cada modificação do registro.
+- O campo `cover` é opcional e armazena apenas o caminho/URL da imagem salva no servidor.
 
 ---
 
 ### Endpoints (Sugestão): Autores
 
-- `GET /autores` : Lista autores.
-- `GET /autores/{id}` : Retorna um autor com os animes vinculados.
-- `POST /autores` : Cria um novo autor.
-- `PATCH /autores/{id}` : Atualiza dados do autor.
+- `GET /authors` : Lista autores.
+- `GET /authors/{id}` : Retorna um autor com os animes vinculados.
+- `POST /authors` : Cria um novo autor.
+- `PATCH /authors/{id}` : Atualiza dados do autor.
 
 ---
 
 ### Endpoints (Sugestão): Estúdios
 
-- `GET /estudios` : Lista estúdios.
-- `GET /estudios/{id}` : Retorna um estúdio com os animes vinculados.
-- `POST /estudios` : Cria um novo estúdio.
-- `PATCH /estudios/{id}` : Atualiza dados do estúdio.
+- `GET /studios` : Lista estúdios.
+- `GET /studios/{id}` : Retorna um estúdio com os animes vinculados.
+- `POST /studios` : Cria um novo estúdio.
+- `PATCH /studios/{id}` : Atualiza dados do estúdio.
 
 ---
 
 ### Endpoints (Sugestão): Animes
 
-- `GET /animes` : Lista animes (Filtros: `?status=`, `?autor_id=`, `?estudio_id=`).
+- `GET /animes` : Lista animes (Filtros: `?status=`, `?author_id=`, `?studio_id=`).
 - `GET /animes/{id}` : Retorna um anime específico.
 - `POST /animes` : Cria um novo anime.
-- `PATCH /animes/{id}` : Atualiza dados (incluindo status e nota).
+- `PATCH /animes/{id}` : Atualiza dados (incluindo status, nota e episodes_watched).
 - `DELETE /animes/{id}` : Remove um anime da lista.
-- `POST /animes/{id}/capa` : Recebe a imagem de capa do anime e salva o caminho no campo `capa`.
-  - _Nota:_ implementado com [`UploadFile`](https://fastapi.tiangolo.com/reference/uploadfile/) do FastAPI.
+- `POST /animes/{id}/cover` : Recebe a imagem de capa do anime e salva o caminho no campo `cover`.
 
 ---
 
@@ -611,13 +250,11 @@ mushi_bingo
 │   ├── main.py
 │   ├── models
 │   ├── routers
+│   ├── enums
 │   ├── schema
 │   └── settings.py
-├── test
-├── migrations
 ├── database.db
-├── alembic.ini
-├── .env
+└── .env
 ```
 
 ---
@@ -672,11 +309,8 @@ uv add sqlalchemy
 
 ```
 # No linux e Windows
-uv add alembic 
-
+uv add alembic
 uv run alembic init migrations
-
-uv run alembic revision --autogenerate -m "mensagem"
 ```
 
 ---
@@ -694,7 +328,6 @@ uv run alembic revision --autogenerate -m "mensagem"
 # Próximos tópicos
 
 - Conectar Banco de Dados
-- Router
 - Criar Recursos
 - RedirectResponse
 - Injeção de Dependência
