@@ -129,16 +129,13 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 ## Passos iniciais
 
-Para criar um projeto, utilize `uv init projeto`
+Para criar um projeto, utilize `uv init projeto --bare`
 
 ```
-# Uma estrutura como essa será criada
+# Uma estrutura mínima como essa será criada
 
 projeto
-├── main.py
-├── pyproject.toml
-├── README.md
-└── uv.lock
+└──pyproject.toml
 ```
 
 O próximo passo é abrir o projeto no VsCode e o terminal integrado com `CTRL+J`
@@ -159,6 +156,13 @@ uv add "fastapi[standard]"
 **Dica:** Verifique se está dentro da pasta (raiz) do projeto antes de instalar.
 
 ---
+Configurar ponto de entrada (`entrypoint`) em `pyproject.toml`
+
+```toml
+[tool.fastapi]
+entrypoint = "main:app"
+```
+___
 
 Vamos testar a instalação do FastAPI criando nosso primeiro endpoint (ou rota).
 
@@ -306,7 +310,7 @@ Serve para atualizar uma coleção dados.
 
 ```python
 
-@app.put("users/{user_id}", response_model=UserPublic)
+@app.put("/users/{user_id}", response_model=UserPublic)
 def update_user(user_id: int, user: UserSchema):
 
     user_with_id = UserDB(**user.model_dump(), id=user_id)
@@ -335,11 +339,13 @@ No endpoint `put`, caso seja enviado um valor invalidado um error é gerado.
 Solução (tratar o error)
 
 ```python
+from fastapi import FastAPI, HTTPException
+
 @app.put("/users/{user_id}", response_model=UserPublic)
 def update_user(user_id: int, user: UserSchema):
     # caso de exceção
     if user_id > len(database) or user_id < 1:
-        raise Exceção(
+        raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado"
         )
     # restante do código
@@ -353,6 +359,7 @@ def update_user(user_id: int, user: UserSchema):
 Serve para deletar dado da base.
 
 ```python
+from fastapi import FastAPI, HTTPException
 
 @app.delete(
     "/users/{user_id}", response_model=UserPublic, status_code=HTTPStatus.OK
