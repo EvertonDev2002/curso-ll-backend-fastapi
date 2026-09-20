@@ -12,7 +12,7 @@ services:
     environment:
       - KROKI_MERMAID_HOST=mermaid
     ports:
-      - "8000:8000"
+      - "${KROKI_PORT:-8000}:8000"
     networks:
       - slides
 
@@ -24,6 +24,7 @@ services:
       - slides
 
   marp:
+    image: marp-local:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -35,10 +36,10 @@ services:
     environment:
       - LANG=pt_BR.UTF-8
       - MARP_USER=${MARP_USER:-1000:1000}
-      - KROKI_ENTRYPOINT=http://localhost:8000
+      - KROKI_ENTRYPOINT=http://localhost:${KROKI_PORT:-8000}
     ports:
-      - "8080:8080"
-      - "37717:37717"
+      - "${MARP_PORT:-8080}:8080"
+      - "${MARP_WS_PORT:-37717}:37717"
     command: --debug=true --html --engine ./marp-engine.cjs --theme-set ./theme/minimalist.css --server --watch --allow-local-files .   
     depends_on:
       - kroki

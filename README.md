@@ -53,6 +53,25 @@ docker compose run --rm -e KROKI_ENTRYPOINT=http://kroki:8000 marp --html --engi
 | `37717` | `marp`    | WebSocket de live-reload do `--watch`. Não se acessa direto (dá "Upgrade Required" se tentar) — os `.html` gerados já se conectam nele sozinhos pra recarregar a página quando um `.md` muda. |
 | `8000`  | `kroki`   | HTTP do Kroki. É essa porta que o `marp-engine.cjs` usa (via `KROKI_ENTRYPOINT`) pra montar a URL de cada diagrama Mermaid. |
 
+### Alterar as portas
+
+Por padrão, o ambiente usa as portas 8000, 8080 e 37717 do seu computador. Se alguma delas já estiver em uso, crie um arquivo `.env` na raiz do projeto e defina só as que quiser mudar:
+
+```env
+# Kroki (renderiza os diagramas). Padrão: 8000
+KROKI_PORT=18000
+
+# Preview dos slides no navegador. Padrão: 8080
+MARP_PORT=18080
+
+# Porta do live reload do preview. Padrão: 37717
+MARP_WS_PORT=47717
+```
+
+Depois, recrie os containers com `docker compose up -d` e acesse o preview em `http://localhost:18080` (a porta que você definiu em `MARP_PORT`).
+
+> O `.env` é de uso local e está no `.gitignore`. Não o envie ao repositório, senão o CI passa a usar essas portas.
+
 ## Serviços
 
 - **marp**: serve os slides em modo `--server`, lendo `slide/md/` a partir
