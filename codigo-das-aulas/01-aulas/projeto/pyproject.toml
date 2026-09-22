@@ -1,0 +1,35 @@
+[project]
+name = "projeto"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.141.1",
+]
+
+[tool.fastapi]
+entrypoint = "main:app"
+
+[dependency-groups]
+dev = [
+    "poethepoet>=0.48.0",
+    "ruff>=0.16.8",
+]
+
+[tool.ruff]
+line-length = 79
+extend-exclude =["migrations"]
+
+[tool.ruff.lint]
+preview = true
+select = ["I", "F", "E", "W", "PL", "PT", "N", "C4", "ICN", "RUF", "SIM"]
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+
+[tool.poe.tasks]
+lint = { cmd = "ruff check" }
+fmt.sequence = [
+{ cmd = "ruff check --fix" },
+{ cmd = "ruff format" },
+]
+start = "fastapi dev"
