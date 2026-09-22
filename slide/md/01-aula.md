@@ -168,7 +168,7 @@ ___
 Configurando `ruff` e `poe` para `lint` e `format`
 
 ```bash
-uv add --dev ruff poe
+uv add --dev ruff poethepoet
 ```
 
 ```python
@@ -207,9 +207,9 @@ Para utilizar use
 # Para lint
 uv run poe lint
 # Para formatar
-uv run poe fmt 
+uv run poe fmt
 # Para iniciar o FastAPI
-uv run poe start 
+uv run poe start
 ```
 
 ---
