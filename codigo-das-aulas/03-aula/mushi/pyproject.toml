@@ -1,0 +1,9 @@
+[project]
+name = "mushi"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.20.0",
+    "fastapi[standard]>=0.141.1",
+    "sqlalchemy>=2.0.54",
+]
